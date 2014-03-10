@@ -9,7 +9,7 @@ namespace Iteedee.ApkReader.Run
 {
     public class ReadApk
     {
-        public static void ReadApkFromPath(string path)
+        public static ApkInfo ReadApkFromPath(string path)
         {
             byte[] manifestData = null;
             byte[] resourcesData = null;
@@ -72,7 +72,7 @@ namespace Iteedee.ApkReader.Run
             Console.WriteLine(string.Format("Supports Large Screens: {0}", info.supportLargeScreens));
             Console.WriteLine(string.Format("Supports Normal Screens: {0}", info.supportNormalScreens));
             Console.WriteLine(string.Format("Supports Small Screens: {0}", info.supportSmallScreens));
-            
+            return info;
         }
     }
 }
