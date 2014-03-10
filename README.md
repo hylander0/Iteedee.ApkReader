@@ -82,7 +82,7 @@ After you have uncompressed and extracted the necessary data, simply pass in the
 
 ## Contributors
 
-* Justin Hyland (author) Email: justin.hyland@live.com
+* [Justin Hyland](http://blog.iteedee.com)  (author) Email: justin.hyland@live.com
 
 ## MIT License
 
