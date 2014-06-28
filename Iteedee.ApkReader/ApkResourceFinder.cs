@@ -507,6 +507,7 @@ namespace Iteedee.ApkReader
                             while ((c = br.ReadChar()) != 0)
                             {
                                 strings[i] += c;
+                                br.ReadChar();
                                 pos += 2;
                             }
                             br.BaseStream.Seek(lastPosition, SeekOrigin.Begin);
