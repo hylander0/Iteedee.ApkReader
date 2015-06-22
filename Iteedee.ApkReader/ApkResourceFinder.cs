@@ -462,59 +462,41 @@ namespace Iteedee.ApkReader
                     for (int i = 0; i < stringCount; i++)
                     {
                         int pos = stringsStart + offsets[i];
-                        lastPosition = br.BaseStream.Position;
-                        short len = (short)br.BaseStream.Seek(pos, SeekOrigin.Begin);
-                        br.BaseStream.Seek(lastPosition, SeekOrigin.Begin);
-
-                        if (len < 0)
-                        {
-                            short extendShort = br.ReadInt16();
-                        }
-                        pos += 2;
+                        br.BaseStream.Seek(pos, SeekOrigin.Begin);
                         strings[i] = "";
                         if (isUTF_8)
                         {
-                            int start = pos;
-                            int length = 0;
-                            lastPosition = br.BaseStream.Position;
-                            br.BaseStream.Seek(pos, SeekOrigin.Begin);
-                            while (br.ReadByte() != 0)
-                            {
-                                length++;
-                                pos++;
+                            int u16len = br.ReadByte(); // u16len
+                            if ((u16len & 0x80) != 0) 
+                            {// larger than 128
+                                u16len = ((u16len & 0x7F) << 8) + br.ReadByte();
                             }
-                            br.BaseStream.Seek(lastPosition, SeekOrigin.Begin);
 
-                            byte[] oneData = new byte[length];
-                            if (length > 0)
-                            {
-                                byte[] byteArray = data;
-                                for (int k = 0; k < length; k++)
-                                {
-                                    oneData[k] = byteArray[start + k];
-                                }
+                            int u8len = br.ReadByte(); // u8len
+                            if ((u8len & 0x80) != 0) 
+                            {// larger than 128
+                                u8len = ((u8len & 0x7F) << 8) + br.ReadByte();
                             }
-                            if (oneData.Length > 0)
-                                strings[i] = Encoding.UTF8.GetString(oneData);
+
+                            if (u8len > 0)
+                                strings[i] = Encoding.UTF8.GetString(br.ReadBytes(u8len));
                             else
                                 strings[i] = "";
                         }
-                        else
+                        else // UTF_16
                         {
-                            char c;
-                            lastPosition = br.BaseStream.Position;
-                            br.BaseStream.Seek(pos, SeekOrigin.Begin);
-                            while ((c = br.ReadChar()) != 0)
-                            {
-                                strings[i] += c;
-                                br.ReadChar();
-                                pos += 2;
+                            int u16len = br.ReadUInt16();
+                            if ((u16len & 0x8000) != 0) 
+                            {// larger than 32768
+                                u16len = ((u16len & 0x7FFF) << 16) + br.ReadUInt16();
                             }
-                            br.BaseStream.Seek(lastPosition, SeekOrigin.Begin);
+
+                            if (u16len > 0) 
+                            {
+                                strings[i] = Encoding.Unicode.GetString(br.ReadBytes(u16len * 2));
+                            }
                         }
                         Debug.WriteLine("Parsed value: {0}", strings[i]);
-
-
                     }
                     return strings;
 
