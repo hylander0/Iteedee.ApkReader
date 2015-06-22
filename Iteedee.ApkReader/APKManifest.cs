@@ -11,6 +11,7 @@ namespace Iteedee.ApkReader
         private string result = "";
         // decompressXML -- Parse the 'compressed' binary form of Android XML docs 
         // such as for AndroidManifest.xml in .apk files
+        public static int startDocTag = 0x00100100;
         public static int endDocTag = 0x00100101;
         public static int startTag = 0x00100102;
         public static int endTag = 0x00100103;
@@ -85,6 +86,7 @@ namespace Iteedee.ApkReader
             int off = xmlTagOff;
             int indent = 0;
             int startTagLineNo = -2;
+            int startDocTagCounter = 1;
             while (off < manifestFileData.Length)
             {
                 int tag0 = LEW(manifestFileData, off);
@@ -125,7 +127,6 @@ namespace Iteedee.ApkReader
                     }
                     prtIndent(indent, "<" + name + sb + ">");
                     indent++;
-
                 }
                 else if (tag0 == endTag)
                 { // XML END TAG
@@ -136,10 +137,16 @@ namespace Iteedee.ApkReader
                     //tr.parent();  // Step back up the NobTree
 
                 }
+                else if (tag0 == startDocTag)
+                {
+                    startDocTagCounter++;
+                    off += 4;
+                }
                 else if (tag0 == endDocTag)
                 {  // END OF XML DOC TAG
-                    break;
-
+                    startDocTagCounter--;
+                    if (startDocTagCounter == 0)
+                        break;
                 }
                 else if (tag0 == textTag) { 
                     // code "copied" https://github.com/mikandi/php-apk-parser/blob/fixed-mikandi-version/lib/ApkParser/XmlParser.php
