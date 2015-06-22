@@ -34,7 +34,7 @@ Below I am uncompromising the **AndroidManifest.xml** and **Resources.arsc** fil
                     {
                         using (BinaryReader s = new BinaryReader(strm))
                         {
-                            resourcesData = s.ReadBytes((int)item.size);
+                            resourcesData = s.ReadBytes((int)item.Size);
     
                         }
                     }
