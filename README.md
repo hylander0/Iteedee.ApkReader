@@ -34,7 +34,7 @@ Below I am uncompromising the **AndroidManifest.xml** and **Resources.arsc** fil
                     {
                         using (BinaryReader s = new BinaryReader(strm))
                         {
-                            resourcesData = s.ReadBytes((int)s.BaseStream.Length);
+                            resourcesData = s.ReadBytes((int)item.Size);
     
                         }
                     }
@@ -83,6 +83,7 @@ After you have uncompressed and extracted the necessary data, simply pass in the
 ## Contributors
 
 * [Justin Hyland](http://blog.iteedee.com)  (author) Email: justin.hyland@live.com
+* [KK GUO] (https://github.com/kkguo)  (bug fixes) Email: kkguokk@gmail.com
 
 ## MIT License
 
