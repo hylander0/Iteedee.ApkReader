@@ -130,11 +130,13 @@ namespace Iteedee.ApkReader
                 info.versionCode = FindInDocument(doc, "manifest", "versionCode");
                 info.versionName = FindInDocument(doc, "manifest", "versionName");
                 info.packageName = FindInDocument(doc, "manifest", "package");
+
+                int labelID;
                 info.label = FindInDocument(doc, "application", "label");
                 if (info.label.StartsWith("@"))
                     VER_ICN[LABEL_ID] = info.label;
-                else
-                    VER_ICN[LABEL_ID] = String.Format("@{0}", Convert.ToInt32(info.label).ToString("X4"));
+                else if (int.TryParse(info.label, out labelID))
+                    VER_ICN[LABEL_ID] = String.Format("@{0}", labelID.ToString("X4"));
 
                 // Fill up the support screen field
                 extractSupportScreens(info, doc);
