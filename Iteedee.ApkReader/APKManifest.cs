@@ -10,7 +10,7 @@ namespace Iteedee.ApkReader
     {
         private string result = "";
 
-        private bool isUtf8 = false;
+        private bool isUtf8;
         // decompressXML -- Parse the 'compressed' binary form of Android XML docs 
         // such as for AndroidManifest.xml in .apk files
         public static int startDocTag = 0x00100100;
@@ -21,7 +21,6 @@ namespace Iteedee.ApkReader
 
         public string ReadManifestFileIntoXml(byte[] manifestFileData)
         {
-
             if (manifestFileData.Length == 0)
                 throw new Exception("Failed to read manifest data.  Byte array was empty");
             // Compressed XML file/bytes starts with 24x bytes of data,
@@ -47,12 +46,10 @@ namespace Iteedee.ApkReader
             int xmlTagOff = LEW(manifestFileData, 3 * 4);  // Start from the offset in the 3rd word.
                                                            // Scan forward until we find the bytes: 0x02011000(x00100102 in normal int)
 
-            var flag = LEW(manifestFileData, 4 * 6);
-
+            // String pool is encoded in UTF-8
+            // https://android.googlesource.com/platform/frameworks/base/+/master/libs/androidfw/include/androidfw/ResourceTypes.h#451
+            int flag = LEW(manifestFileData, 4 * 6);
             this.isUtf8 = (flag & (1 << 8)) > 0;
-
-
-            ReadStringTable(manifestFileData);
 
             for (int ii = xmlTagOff; ii < manifestFileData.Length - 4; ii += 4)
             {
@@ -184,57 +181,7 @@ namespace Iteedee.ApkReader
 
 
             return result;
-        }
-
-        private void ReadStringTable(byte[] xml)
-        {
-            var offset = 3;
-
-            int chunkSize = LEW(xml, 4 * offset++);//3
-            int stringCount = LEW(xml, 4 * offset++); //4
-            int styleCount = LEW(xml, 4 * offset++); //5
-
-            var flag= LEW(xml, 4 * offset++);
-
-            int offsetStrings = LEW(xml, 4 * offset++); //7
-            int offsetStyles = LEW(xml, 4 * offset++);//8
-
-            int[] stringOffsets =  new int[stringCount];
-            for (var i = 0; i < stringCount; i++)
-            {
-                stringOffsets[i] = LEW(xml, 4 * offset++);
-            }
-
-            int[] styleOffsets = new int[styleCount];
-            for (var i = 0; i < styleCount; i++)
-            {
-                styleOffsets[i] = LEW(xml, 4 * offset++);
-            }
-
-            int bufsize = chunkSize - offsetStrings;
-            if (offsetStyles > 0)
-            {
-                bufsize = offsetStyles - offsetStrings;
-            }
-
-            var chars = xml.Select(x=>(char)x).ToArray();
-            var baseOffset = offset*4;
-            byte[] rawstrings = new byte[bufsize]; //readByteArray(bufsize);
-            Array.Copy(xml, baseOffset,rawstrings,0,bufsize);
-
-            var stringtable = new string[stringCount];
-            // this.styletable = new Style[styleCount];
-            // TODO: load style table!?
-
-            for (int i = 0; i < stringCount; i++)
-            {
-                stringtable[i] = compXmlStringAt(xml, stringOffsets[i]+baseOffset );
-                //copyUTF16(rawstrings, stringOffsets[i]);
-                // System.out.printf("Strings[%d] = \"%s\"%n", i, this.stringtable[i]);
-            }
-
-        }
-// end of decompressXML
+        } // end of decompressXML
 
 
         public String compXmlString(byte[] xml, int sitOff, int stOff, int strInd)
@@ -262,7 +209,18 @@ namespace Iteedee.ApkReader
         // is followed by that number of 16 bit (Unicode) chars.
         public String compXmlStringAt(byte[] arr, int strOff)
         {
-            //int strLen = (arr[strOff + 1] << 8 & 0xff00 | arr[strOff] & 0xff) ;
+
+            /**
+             * Strings in UTF-8 format have length indicated by a length encoded in the
+             * stored data. It is either 1 or 2 characters of length data. This allows a
+             * maximum length of 0x7FFF (32767 bytes), but you should consider storing
+             * text in another way if you're using that much data in a single string.
+             *
+             * If the high bit is set, then there are two characters or 2 bytes of length
+             * data encoded. In that case, drop the high bit of the first character and
+             * add it together with the next character.
+             * https://android.googlesource.com/platform/frameworks/base/+/master/libs/androidfw/ResourceTypes.cpp#674
+             */
             int strLen = arr[strOff];
             if ((strLen & 0x80) != 0)
                 strLen = ((strLen & 0x7f) << 8) + arr[strOff + 1];
@@ -274,13 +232,11 @@ namespace Iteedee.ApkReader
             byte[] chars = new byte[strLen];
             for (int ii = 0; ii < strLen; ii++)
             {
-                chars[ii] =arr[strOff + 2 + ii] ;
+                chars[ii] = arr[strOff + 2 + ii];
             }
-            
-            var str= System.Text.Encoding.GetEncoding(this.isUtf8?"UTF-8":"UTF-16").GetString(chars);
-            return str;
-            /**/
 
+
+            return System.Text.Encoding.GetEncoding(this.isUtf8?"UTF-8":"UTF-16").GetString(chars);
         } // end of compXmlStringAt
 
 
