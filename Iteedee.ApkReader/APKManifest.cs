@@ -7,8 +7,10 @@ using System.Text;
 namespace Iteedee.ApkReader
 {
     public class APKManifest
-            {
+    {
         private string result = "";
+
+        private bool isUtf8;
         // decompressXML -- Parse the 'compressed' binary form of Android XML docs 
         // such as for AndroidManifest.xml in .apk files
         public static int startDocTag = 0x00100100;
@@ -42,7 +44,13 @@ namespace Iteedee.ApkReader
             // StringTable.  There is some unknown data after the StringTable, scan
             // forward from this point to the flag for the start of an XML start tag.
             int xmlTagOff = LEW(manifestFileData, 3 * 4);  // Start from the offset in the 3rd word.
-            // Scan forward until we find the bytes: 0x02011000(x00100102 in normal int)
+                                                           // Scan forward until we find the bytes: 0x02011000(x00100102 in normal int)
+
+            // String pool is encoded in UTF-8
+            // https://android.googlesource.com/platform/frameworks/base/+/master/libs/androidfw/include/androidfw/ResourceTypes.h#451
+            int flag = LEW(manifestFileData, 4 * 6);
+            this.isUtf8 = (flag & (1 << 8)) > 0;
+
             for (int ii = xmlTagOff; ii < manifestFileData.Length - 4; ii += 4)
             {
                 if (LEW(manifestFileData, ii) == startTag)
@@ -201,15 +209,34 @@ namespace Iteedee.ApkReader
         // is followed by that number of 16 bit (Unicode) chars.
         public String compXmlStringAt(byte[] arr, int strOff)
         {
-            int strLen = arr[strOff + 1] << 8 & 0xff00 | arr[strOff] & 0xff;
+
+            /**
+             * Strings in UTF-8 format have length indicated by a length encoded in the
+             * stored data. It is either 1 or 2 characters of length data. This allows a
+             * maximum length of 0x7FFF (32767 bytes), but you should consider storing
+             * text in another way if you're using that much data in a single string.
+             *
+             * If the high bit is set, then there are two characters or 2 bytes of length
+             * data encoded. In that case, drop the high bit of the first character and
+             * add it together with the next character.
+             * https://android.googlesource.com/platform/frameworks/base/+/master/libs/androidfw/ResourceTypes.cpp#674
+             */
+            int strLen = arr[strOff];
+            if ((strLen & 0x80) != 0)
+                strLen = ((strLen & 0x7f) << 8) + arr[strOff + 1];
+
+            if (!this.isUtf8)
+                strLen *= 2;
+
+            
             byte[] chars = new byte[strLen];
             for (int ii = 0; ii < strLen; ii++)
             {
-                chars[ii] = arr[strOff + 2 + ii * 2];
+                chars[ii] = arr[strOff + 2 + ii];
             }
 
 
-            return System.Text.Encoding.UTF8.GetString(chars);  // Hack, just use 8 byte chars
+            return System.Text.Encoding.GetEncoding(this.isUtf8?"UTF-8":"UTF-16").GetString(chars);
         } // end of compXmlStringAt
 
 
