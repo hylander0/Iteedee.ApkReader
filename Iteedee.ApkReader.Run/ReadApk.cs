@@ -41,6 +41,9 @@ namespace Iteedee.ApkReader.Run
                                 }
                             }
                         }
+
+                        if (resourcesData != null && manifestData != null)
+                            break;
                     }
                 }
             }
