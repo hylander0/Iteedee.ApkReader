@@ -33,6 +33,7 @@ namespace Iteedee.ApkReader
         public String minSdkVersion;
         public String targetSdkVersion;
         public String packageName;
+        public String debuggable;
         public List<String> Permissions;
         public List<String> iconFileName;
         public List<String> iconFileNameToGet;
@@ -46,6 +47,16 @@ namespace Iteedee.ApkReader
         public bool supportAnyDensity;
         public Dictionary<String, List<String>> resStrings;
         public Dictionary<String, String> layoutStrings;
+        
+        public bool IsDebuggable
+        {
+            get
+            {
+                if (debuggable == null) return false; // debugabble is not in the manifest
+                if (debuggable.Equals("-1")) return true; // debuggable == true
+                else return false; 
+            }
+        }
 
         public static bool supportSmallScreen(byte[] dpi)
         {
