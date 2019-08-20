@@ -1,6 +1,8 @@
 Iteedee.ApkReader
 =================
 
+## This project is no longer being active supported.  If there is an issue and would like to contribute, please submit a pull request
+
 .NET library written in C# for reading/parsing APK manifest (AndroidManifest.xml) and resource data (Resources.arsc)
 
 ## Using the ApkReader Library
