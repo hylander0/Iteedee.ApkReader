@@ -137,6 +137,10 @@ namespace Iteedee.ApkReader
                     VER_ICN[LABEL_ID] = info.label;
                 else if (int.TryParse(info.label, out labelID))
                     VER_ICN[LABEL_ID] = String.Format("@{0}", labelID.ToString("X4"));
+                
+                // Get the value of android:debuggable in the manifest
+                // "0" = false and "-1" = true
+                info.debuggable = FindInDocument(doc, "application", "debuggable");
 
                 // Fill up the support screen field
                 extractSupportScreens(info, doc);
